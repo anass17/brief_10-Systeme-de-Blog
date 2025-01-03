@@ -8,7 +8,7 @@
         private string $charset = 'utf8mb4';
         private $conn;
 
-        public function __construct(string $host = 'localhost', string $dbname = 'bibliotheque', string $username = 'root', string $password = 'root123') {
+        public function __construct(string $host = 'localhost', string $dbname = 'blogs-db', string $username = 'root', string $password = 'root123') {
             $this -> host = $host;
             $this -> dbname = $dbname;
             $this -> username = $username;
@@ -31,6 +31,28 @@
                 return true;
             } catch (PDOException $e) {
                 return false;
+            }
+        }
+
+        // Method to execute a select statement
+
+        public function select(string $sql, array|null $data = null) {
+
+            // Only Select statements are allowed
+
+            if (preg_match('/^SELECT/i', $sql) == 0) {
+                return false;
+            }
+
+            // Execute Statment
+
+            try {
+                $stmt = $this -> conn -> prepare($sql);
+                $stmt -> execute($data);
+
+                return $stmt -> fetchAll();
+            } catch (PDOException) {
+                return [];
             }
         }
 
@@ -68,27 +90,6 @@
             }
         }
 
-        // Method to execute a delete statement 
-
-        public function delete(string $table, string $condition) {
-
-            $sql = "DELETE FROM $table WHERE $condition";
-
-            // Execute Statment
-
-            try {
-                $stmt = $this -> conn -> query($sql);
-
-                if ($stmt -> rowCount() > 0) {
-                    return true;
-                }
-
-                return false;
-            } catch (PDOException) {
-                return false;
-            }
-        }
-
         // Method to execute an update statement
 
         public function update(string $table, array $columns, array $data, string $condition) {
@@ -120,24 +121,26 @@
             }
 
         }
-    }
 
-    $db = new Database();
+        // Method to execute a delete statement 
 
-    $db -> connect();
+        public function delete(string $table, string $condition, array|null $data = null) {
 
-    // if ($db -> delete('users', ['first_name = "Ali"'])) {
-    //     echo 'Yes';
-    // } else {
-    //     echo 'No';
-    // }
-    // if ($db -> insert('users', ['first_name', 'last_name', 'age'], ['Ali', 'Gabri', 36])) {
-    //     echo 'Yes';
-    // } else {
-    //     echo 'No';
-    // }
-    if ($db -> update('users', ['first_name', 'age'], ['Ahmed', 61], 'user_id = 1')) {
-        echo 'Yes';
-    } else {
-        echo 'No';
+            $sql = "DELETE FROM $table WHERE $condition";
+
+            // Execute Statment
+
+            try {
+                $stmt = $this -> conn -> prepare($sql);
+                $stmt -> execute($data);
+
+                if ($stmt -> rowCount() > 0) {
+                    return true;
+                }
+
+                return false;
+            } catch (PDOException) {
+                return false;
+            }
+        }
     }
