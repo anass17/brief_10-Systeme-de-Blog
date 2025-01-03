@@ -68,13 +68,11 @@
             }
         }
 
-        // Method to execute a delete statment 
+        // Method to execute a delete statement 
 
-        public function delete(string $table, array $conditions) {
+        public function delete(string $table, string $condition) {
 
-            $conditions_string = implode(' AND ', $conditions);
-
-            $sql = "DELETE FROM $table WHERE $conditions_string";
+            $sql = "DELETE FROM $table WHERE $condition";
 
             // Execute Statment
 
@@ -91,14 +89,42 @@
             }
         }
 
-        // public function update(string $table, array $columns, array $data, $condition) {
+        // Method to execute an update statement
 
-        // }
+        public function update(string $table, array $columns, array $data, string $condition) {
+            
+            if (count($columns) == 0 || count($columns) != count($data)) {
+                return false;
+            }
+
+            // combine columns with placeholders
+
+            $columns_string = ''; 
+
+            foreach($columns as $col) {
+                $columns_string .= $col . ' = ?,';
+            }
+
+            $columns_string = rtrim($columns_string, ',');
+
+            // Combine all parts to form an insert statement
+
+            $sql = "UPDATE $table SET $columns_string WHERE $condition";
+
+            $stmt = $this -> conn -> prepare($sql);
+
+            try {
+                return $stmt -> execute($data);
+            } catch (Exception) {
+                return false;
+            }
+
+        }
     }
 
-    // $db = new Database();
+    $db = new Database();
 
-    // $db -> connect();
+    $db -> connect();
 
     // if ($db -> delete('users', ['first_name = "Ali"'])) {
     //     echo 'Yes';
@@ -110,3 +136,8 @@
     // } else {
     //     echo 'No';
     // }
+    if ($db -> update('users', ['first_name', 'age'], ['Ahmed', 61], 'user_id = 1')) {
+        echo 'Yes';
+    } else {
+        echo 'No';
+    }
