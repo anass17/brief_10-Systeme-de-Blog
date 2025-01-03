@@ -8,7 +8,7 @@
         private string $charset = 'utf8mb4';
         private $conn;
 
-        public function __construct(string $host = 'localhost', string $dbname = 'blogs-db', string $username = 'root', string $password = 'root123') {
+        public function __construct(string $host = 'localhost', string $dbname = 'bibliotheque', string $username = 'root', string $password = 'root123') {
             $this -> host = $host;
             $this -> dbname = $dbname;
             $this -> username = $username;
@@ -34,7 +34,47 @@
             }
         }
 
-        // public function query() {
+        // Method to execute an insert statement
+
+        public function insert(string $table, array $columns, array $data) {
+
+            if (count($columns) != count($data)) {
+                return false;
+            }
+
+            // repeat the placeholder, to match the number of provided columns
+
+            $placeholders = '';            
+            for($i = 0; $i < count($columns); $i++) {
+                $placeholders .= '?,';
+            }
+            $placeholders = trim($placeholders, ',');
+
+
+            // Join columns into a string
+
+            $columns_string = implode(', ', $columns);
+
+            // Combine all parts to form an insert statement
+
+            $sql = "INSERT INTO $table ($columns_string) VALUES ($placeholders)";
+
+            $stmt = $this -> conn -> prepare($sql);
+
+            return $stmt -> execute($data);
+        }
+
+        // public function update(string $table, array $columns, array $data, $condition) {
 
         // }
     }
+
+    // $db = new Database();
+
+    // $db -> connect();
+
+    // if ($db -> insert('users', ['first_name', 'last_name', 'age'], ['Ali', 'Gabri', 36])) {
+    //     echo 'Yes';
+    // } else {
+    //     echo 'No';
+    // }
