@@ -38,7 +38,7 @@
 
         public function insert(string $table, array $columns, array $data) {
 
-            if (count($columns) != count($data)) {
+            if (count($columns) == 0 || count($columns) != count($data)) {
                 return false;
             }
 
@@ -61,7 +61,34 @@
 
             $stmt = $this -> conn -> prepare($sql);
 
-            return $stmt -> execute($data);
+            try {
+                return $stmt -> execute($data);
+            } catch (Exception) {
+                return false;
+            }
+        }
+
+        // Method to execute a delete statment 
+
+        public function delete(string $table, array $conditions) {
+
+            $conditions_string = implode(' AND ', $conditions);
+
+            $sql = "DELETE FROM $table WHERE $conditions_string";
+
+            // Execute Statment
+
+            try {
+                $stmt = $this -> conn -> query($sql);
+
+                if ($stmt -> rowCount() > 0) {
+                    return true;
+                }
+
+                return false;
+            } catch (PDOException) {
+                return false;
+            }
         }
 
         // public function update(string $table, array $columns, array $data, $condition) {
@@ -73,6 +100,11 @@
 
     // $db -> connect();
 
+    // if ($db -> delete('users', ['first_name = "Ali"'])) {
+    //     echo 'Yes';
+    // } else {
+    //     echo 'No';
+    // }
     // if ($db -> insert('users', ['first_name', 'last_name', 'age'], ['Ali', 'Gabri', 36])) {
     //     echo 'Yes';
     // } else {
