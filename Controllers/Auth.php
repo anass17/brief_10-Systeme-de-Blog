@@ -178,6 +178,18 @@
 
         public function deleteAccessToken() {
 
+            // Remove token from database
+
+            if (!$this -> db -> update('users', ['token', 'token_expiration'], ['', null], 'user_id = ' . $this -> user -> getId())) {
+                $this -> error = "Could not delete acess token";
+                return false;
+            }
+
+            // Remove token cookie
+
+            setcookie('token', '', time() - 0, '/', 'localhost', true, true);
+
+            return true;
         }
 
         public function createCSRFToken() {
@@ -200,8 +212,8 @@
 
     $auth = new Auth();
 
-    // $auth -> user -> setId(1);
-    // $auth -> createAccessToken();
-    // $auth -> isAccessTokenExists();
+    $auth -> user -> setId(1);
+    $auth -> createAccessToken();
+    // $auth -> deleteAccessToken();
 
 ?>
