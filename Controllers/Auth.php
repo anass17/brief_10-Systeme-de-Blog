@@ -176,6 +176,8 @@
             return true;
         }
 
+        // Method to delete Access Token
+        
         public function deleteAccessToken() {
 
             // Remove token from database
@@ -192,12 +194,19 @@
             return true;
         }
 
-        public function createCSRFToken() {
+        // Method to create CSRF Token
 
+        public function createCSRFToken() {
+            $csrf_token = bin2hex(random_bytes(32));
+            $_SESSION['CSRF_token'] = $csrf_token;
         }
 
-        public function isCSRFTokenValid() {
+        public function isCSRFTokenValid(string $token) {
+            if (isset($_SESSION['CSRF_token']) && $_SESSION["CSRF_token"] == $token) {
+                return true;
+            }
 
+            return false;
         }
 
         public function isEmailExists() {
@@ -212,8 +221,9 @@
 
     $auth = new Auth();
 
-    $auth -> user -> setId(1);
-    $auth -> createAccessToken();
+    // $auth -> user -> setId(1);
+    // $auth -> createCSRFToken();
     // $auth -> deleteAccessToken();
+
 
 ?>
