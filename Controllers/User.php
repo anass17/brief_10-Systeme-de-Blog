@@ -1,13 +1,13 @@
 <?php
 
     class User {
-        private int $id;
-        private string $first_name;
-        private string $last_name;
-        private string $email;
-        private string $password;
-        private string $role;
-        private string $error;
+        private int $id = 0;
+        private string $first_name = '';
+        private string $last_name = '';
+        private string $email = '';
+        private string $password = '';
+        private string $role = '';
+        private string $error = '';
 
         public function __construct() {
             
@@ -29,6 +29,9 @@
         }
         public function getRole() {
             return htmlspecialchars($this -> role);
+        }
+        public function getPassword() {
+            return $this -> password;
         }
         public function getError() {
             return $this -> error;
@@ -57,7 +60,7 @@
                 $this -> error = "Last Name is too short"; 
                 return false;
             }
-            $this -> first_name = $last_name;
+            $this -> last_name = $last_name;
         }
 
         public function setEmail(string $email) {
