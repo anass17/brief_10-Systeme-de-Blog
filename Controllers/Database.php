@@ -8,11 +8,13 @@
         private string $charset = 'utf8mb4';
         private $conn;
 
-        public function __construct(string $host = 'localhost', string $dbname = 'blogs-db', string $username = 'root', string $password = 'root123') {
+        public function __construct(string $host = 'localhost', string $dbname = 'bibliotheque', string $username = 'root', string $password = 'root123') {
             $this -> host = $host;
             $this -> dbname = $dbname;
             $this -> username = $username;
             $this -> password = $password;
+
+            $this -> connect();
         }
 
         // Method to connect to database using PDO Class
@@ -29,7 +31,7 @@
                 $this -> conn = new PDO($dsn, $this -> username, $this -> password, $options);
 
                 return true;
-            } catch (PDOException $e) {
+            } catch (PDOException) {
                 return false;
             }
         }
