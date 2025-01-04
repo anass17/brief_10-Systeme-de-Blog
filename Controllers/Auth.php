@@ -1,8 +1,14 @@
 <?php
 
+    session_start();
+
+    include 'Database.php';
+    include 'User.php';
+
     class Auth {
         private $db;
         public $user;
+        private $error;
 
         public function __construct() {
             $this -> db = new Database();
@@ -104,6 +110,64 @@
 
         }
 
+        // Method to create/update Access Token
+
+        public function createAccessToken() {
+
+            // Set the token and its expiration time 
+
+            $token = bin2hex(random_bytes(32));
+            $token_expiration = time() + 15 * 60;
+            $token_expiration_formated = date('Y-m-d H:i:s', $token_expiration);
+
+            // Store token in the database
+
+            if (!$this -> db -> update('users', ['token', 'token_expiration'], [$token, $token_expiration_formated], 'user_id = ' . $this -> user -> getId())) {
+                $this -> error = "Could not assign a token";
+                return false;
+            }
+
+            // Store token in a cookie
+
+            $cookie_value = $this -> user -> getId() . '.' . $token;            // In the format "ID.token"
+            setcookie('token', $cookie_value, $token_expiration, '/', 'localhost', true, true);
+
+            return true;
+        }
+
+        public function isAccessTokenExists() {
+
+        }
+
+        public function isAccessTokenValid() {
+
+        }
+
+        public function deleteAccessToken() {
+
+        }
+
+        public function createCSRFToken() {
+
+        }
+
+        public function isCSRFTokenValid() {
+
+        }
+
+        public function isEmailExists() {
+
+        }
+
+        public function insertVisitor() {
+
+        }
+
     }
+
+    $auth = new Auth();
+
+    $auth -> user -> setId(1);
+    $auth -> createAccessToken();
 
 ?>
