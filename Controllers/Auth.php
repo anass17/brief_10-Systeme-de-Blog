@@ -6,9 +6,9 @@
     include 'User.php';
 
     class Auth {
-        public $db;
-        public $user;
-        private $error;
+        private Database $db;
+        public User $user;
+        private array $errors = [];
 
         public function __construct() {
             $this -> db = new Database();
@@ -19,15 +19,24 @@
 
         public function login() {
 
+            // Check if there are any errors while inserting data
+
+            if (!empty($this -> user -> getErrors())) {
+                $this -> errors = $this -> user -> getErrors();
+                return false;
+            }
+
             // Check if all the necessary data was entered
 
             if (
                 empty($this -> user -> getEmail()) ||
                 empty($this -> user -> getPassword())
             ) {
-                echo 'Please fill in the form';
+                array_push($this -> errors, "Please fill in the form");
                 return false;
             }
+
+            // Get user row, if it exists
 
             $data = [
                 $this -> user -> getEmail()
@@ -36,17 +45,28 @@
             $result = $this -> db -> select("SELECT * from users WHERE email = ?", $data);
 
             if (!$result) {
-                echo 'Incorrect Email address or password';
+                array_push($this -> errors, "Incorrect Email address or password");
                 return false;
             }
+
+            // Verify Password
 
             if (!password_verify($this -> user -> getPassword(), $result[0]['password'])) {
-                echo 'Incorrect Email address or password';
+                array_push($this -> errors, "Incorrect Email address or password");
                 return false;
             }
 
-            echo 'Logged in';
+            // Create access token
 
+            if ($this -> createAccessToken()) {
+                return false;
+            }
+
+            // If user row exists, log him into his account
+
+            header('Location: /pages/blogs.php');
+
+            return true;
         }
 
         // Method to register new user
@@ -55,8 +75,8 @@
 
             // Check if there are any errors while inserting data
 
-            if (!empty($this -> user -> getError())) {
-                echo $this -> user -> getError();
+            if (!empty($this -> user -> getErrors())) {
+                $this -> errors = $this -> user -> getErrors();
                 return false;
             }
 
@@ -68,16 +88,14 @@
                 empty($this -> user -> getEmail()) ||
                 empty($this -> user -> getPassword())
             ) {
-                echo 'Please fill in the form';
+                array_push($this -> errors, "Please fill in the form");
                 return false;
             }
 
             // check if email already exists
 
-            $result = $this -> db -> select("SELECT * from users WHERE email = ?", [$this -> user -> getEmail()]);
-
-            if ($result) {
-                echo 'This email already Exists';
+            if ($this -> isEmailExists()) {
+                array_push($this -> errors, "This email already Exists");
                 return false;
             }
 
@@ -97,17 +115,36 @@
                 password_hash($this -> user -> getPassword(), PASSWORD_BCRYPT)
             ];
 
-            if (!$this -> db -> insert('users', $columns, $data)) {
-                echo 'Could not process your request'; 
-            } else {
-                echo 'added successfully';
+            $insert_id = $this -> db -> insert('users', $columns, $data);        // The id of inserted row, or False
+
+            if (!$insert_id) {
+                array_push($this -> errors, "Could not process your request");
+                return false;
             }
+
+            // Create access token
+
+            $this -> user -> setId($insert_id);
+            if ($this -> createAccessToken()) {
+                return false;
+            }
+
+            // If user row exists, log him into his account
+
+            header('Location: /pages/blogs.php');
+
+            return true;
         }
 
         // Method to the user out
 
         public function logout() {
 
+            $this -> deleteAccessToken();
+
+            session_destroy();
+
+            header('Location: /db.php');
         }
 
         // Method to create/update Access Token
@@ -117,7 +154,7 @@
             // Id property must not be empty
 
             if (empty($this -> user -> getId())) {
-                $this -> error = "Invalid user ID";
+                array_push($this -> errors, "Invalid user ID");
                 return false;
             }
 
@@ -131,7 +168,7 @@
             // Store token in the database
 
             if (!$this -> db -> update('users', ['token', 'token_expiration'], [$token, $token_expiration_formated], 'user_id = ' . $this -> user -> getId())) {
-                $this -> error = "Could not assign a token";
+                array_push($this -> errors, "Could not assign a token");
                 return false;
             }
 
@@ -168,10 +205,10 @@
                 return false;
             }
 
-            // Set session parameters
-            
-            $_SESSION['id'] = $cookie_params[0];
-            $_SESSION['token'] = $cookie_params[1];
+            // Update Token
+
+            $this -> user -> setId($cookie_params[0]);
+            $this -> createAccessToken();
 
             return true;
         }
@@ -183,7 +220,7 @@
             // Remove token from database
 
             if (!$this -> db -> update('users', ['token', 'token_expiration'], ['', null], 'user_id = ' . $this -> user -> getId())) {
-                $this -> error = "Could not delete acess token";
+                array_push($this -> errors, "Could not delete access token");
                 return false;
             }
 
@@ -201,6 +238,8 @@
             $_SESSION['CSRF_token'] = $csrf_token;
         }
 
+        // Method to check if a CSRF token is valid
+
         public function isCSRFTokenValid(string $token) {
             if (isset($_SESSION['CSRF_token']) && $_SESSION["CSRF_token"] == $token) {
                 return true;
@@ -209,8 +248,23 @@
             return false;
         }
 
-        public function isEmailExists() {
+        // Method to check if an email exist
 
+        public function isEmailExists() {
+            if (empty($this -> user -> getEmail())) {
+                return false;
+            }
+
+            $result = $this -> db -> select("SELECT * from users WHERE email = ?", [$this -> user -> getEmail()]);
+
+            // If email exists, return user ID
+
+            if ($result) {
+                return $result[0]['user_id'];
+            }
+
+            return false;
+            
         }
 
         public function insertVisitor() {
@@ -225,5 +279,11 @@
     // $auth -> createCSRFToken();
     // $auth -> deleteAccessToken();
 
+    // $auth -> user -> setEmail('anass33@gmail.com');
+
+    // var_dump($auth -> isEmailExists());
+
+
+    $auth -> logout();
 
 ?>

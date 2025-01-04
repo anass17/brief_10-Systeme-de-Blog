@@ -86,7 +86,10 @@
             $stmt = $this -> conn -> prepare($sql);
 
             try {
-                return $stmt -> execute($data);
+                if ($stmt -> execute($data)) {
+                    return $this -> conn -> lastInsertId();
+                }
+                return false;
             } catch (Exception) {
                 return false;
             }
