@@ -6,7 +6,7 @@
     include 'User.php';
 
     class Auth {
-        private $db;
+        public $db;
         public $user;
         private $error;
 
@@ -114,8 +114,16 @@
 
         public function createAccessToken() {
 
+            // Id property must not be empty
+
+            if (empty($this -> user -> getId())) {
+                $this -> error = "Invalid user ID";
+                return false;
+            }
+
             // Set the token and its expiration time 
 
+            date_default_timezone_set('Etc/GMT-1');         // Set timezone to UTC + 1
             $token = bin2hex(random_bytes(32));
             $token_expiration = time() + 15 * 60;
             $token_expiration_formated = date('Y-m-d H:i:s', $token_expiration);
@@ -135,12 +143,37 @@
             return true;
         }
 
+        // Method to check if Access Token Exists
+
         public function isAccessTokenExists() {
+            if (!isset($_COOKIE['token'])) {
+                return false;
+            }
 
-        }
+            // Return cookie parts
 
-        public function isAccessTokenValid() {
+            $cookie_params = explode('.', $_COOKIE['token']);
 
+            // A token cookie must contain two parts: User ID + token
+
+            if (count($cookie_params) != 2) {
+                return false;
+            }
+
+            // Check if the token is valid
+
+            $result = $this -> db -> select("SELECT * FROM users WHERE user_id = ? and token = ? and token_expiration > Current_timestamp", [$cookie_params[0], $cookie_params[1]]);
+
+            if (!$result) {
+                return false;
+            }
+
+            // Set session parameters
+            
+            $_SESSION['id'] = $cookie_params[0];
+            $_SESSION['token'] = $cookie_params[1];
+
+            return true;
         }
 
         public function deleteAccessToken() {
@@ -167,7 +200,8 @@
 
     $auth = new Auth();
 
-    $auth -> user -> setId(1);
-    $auth -> createAccessToken();
+    // $auth -> user -> setId(1);
+    // $auth -> createAccessToken();
+    // $auth -> isAccessTokenExists();
 
 ?>
