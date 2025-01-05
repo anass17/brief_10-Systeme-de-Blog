@@ -1,10 +1,5 @@
 <?php
 
-    session_start();
-
-    include 'Database.php';
-    include 'User.php';
-
     class Auth {
         private Database $db;
         public User $user;
@@ -13,6 +8,12 @@
         public function __construct() {
             $this -> db = new Database();
             $this -> user = new User();
+        }
+
+        // Getter
+
+        public function getErrors() {
+            return $this -> errors;
         }
 
         // Method to log the user into his account
@@ -58,13 +59,10 @@
 
             // Create access token
 
-            if ($this -> createAccessToken()) {
+            $this -> user -> setId($result[0]['user_id']);
+            if (!$this -> createAccessToken()) {
                 return false;
             }
-
-            // If user row exists, log him into his account
-
-            header('Location: /pages/blogs.php');
 
             return true;
         }
@@ -125,13 +123,9 @@
             // Create access token
 
             $this -> user -> setId($insert_id);
-            if ($this -> createAccessToken()) {
+            if (!$this -> createAccessToken()) {
                 return false;
             }
-
-            // If user row exists, log him into his account
-
-            header('Location: /pages/blogs.php');
 
             return true;
         }
@@ -140,11 +134,13 @@
 
         public function logout() {
 
+            if (!$this -> isAccessTokenExists()) {
+                return false;
+            }           
+
             $this -> deleteAccessToken();
 
             session_destroy();
-
-            header('Location: /db.php');
         }
 
         // Method to create/update Access Token
@@ -199,15 +195,21 @@
 
             // Check if the token is valid
 
-            $result = $this -> db -> select("SELECT * FROM users WHERE user_id = ? and token = ? and token_expiration > Current_timestamp", [$cookie_params[0], $cookie_params[1]]);
+            $result = $this -> db -> selectOne("SELECT * FROM users WHERE user_id = ? and token = ? and token_expiration > Current_timestamp", [$cookie_params[0], $cookie_params[1]]);
 
             if (!$result) {
                 return false;
             }
 
-            // Update Token
+            // Set User Data
 
             $this -> user -> setId($cookie_params[0]);
+            $this -> user -> setFirstName($result['first_name']);
+            $this -> user -> setLastName($result['last_name']);
+            $this -> user -> setEmail($result['email']);
+            
+            // Update Token
+
             $this -> createAccessToken();
 
             return true;
@@ -272,18 +274,5 @@
         }
 
     }
-
-    $auth = new Auth();
-
-    // $auth -> user -> setId(1);
-    // $auth -> createCSRFToken();
-    // $auth -> deleteAccessToken();
-
-    // $auth -> user -> setEmail('anass33@gmail.com');
-
-    // var_dump($auth -> isEmailExists());
-
-
-    $auth -> logout();
 
 ?>

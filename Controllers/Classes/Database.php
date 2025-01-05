@@ -36,7 +36,29 @@
             }
         }
 
-        // Method to execute a select statement
+        // Method to execute a select statement and fetch a single row
+
+        public function selectOne(string $sql, array|null $data = null) {
+
+            // Only Select statements are allowed
+
+            if (preg_match('/^SELECT/i', $sql) == 0) {
+                return false;
+            }
+
+            // Execute Statment
+
+            try {
+                $stmt = $this -> conn -> prepare($sql);
+                $stmt -> execute($data);
+
+                return $stmt -> fetch();
+            } catch (PDOException) {
+                return [];
+            }
+        }
+
+        // Method to execute a select statement and fetch all rows
 
         public function select(string $sql, array|null $data = null) {
 
