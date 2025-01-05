@@ -119,9 +119,13 @@
 
         // Method to execute an update statement
 
-        public function update(string $table, array $columns, array $data, string $condition) {
+        public function update(string $table, array $columns, array $data, string $condition, array $cond_data = []) {
             
-            if (count($columns) == 0 || count($columns) != count($data)) {
+            // update table SET col1 = ?, COL2 = ? WHERE id = 1;
+
+            $placeholders_count = substr_count($condition, '?');
+
+            if (count($columns) == 0 || count($columns) != count($data) || $placeholders_count != count($cond_data)) {
                 return false;
             }
 
@@ -141,9 +145,11 @@
 
             $stmt = $this -> conn -> prepare($sql);
 
+            $full_data = array_merge($data, $cond_data);
+
             try {
-                return $stmt -> execute($data);
-            } catch (Exception) {
+                return $stmt -> execute($full_data);
+            } catch (Exception $e) {
                 return false;
             }
 
