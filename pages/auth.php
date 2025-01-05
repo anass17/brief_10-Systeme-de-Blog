@@ -13,6 +13,13 @@
         header('Location: /index.php');
         exit;
     }
+
+    $auth -> createCSRFToken();
+
+    $page = 'login';
+    if (isset($_GET['to']) && $_GET['to'] == 'register') {
+        $page = 'register';
+    }
 ?>
 
 <!DOCTYPE html>
@@ -44,15 +51,14 @@
     </header> -->
 
     <div class="flex gap-10 h-screen overflow-hidden">
-        <div class="h-screen w-[70%] flex justify-center items-center form-container absolute top-0 left-0 transition-all delay-100 duration-300">
+        <div class="h-screen w-[70%] flex justify-center items-center form-container absolute top-0 left-0 transition-all delay-100 duration-300 <?php if($page == 'register') { echo " left-[30%]"; } ?>">
             
             <!-- Log in Form -->
 
-            <form action="/Controllers/Validation/login.php" method="POST" class="py-7 px-9 max-w-xl w-full rounded-xl login-form transition-all delay-100 duration-200 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            <form action="/Controllers/Validation/login.php" method="POST" class="py-7 px-9 max-w-xl w-full rounded-xl login-form transition-all delay-100 duration-200 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 <?php if($page != 'login') { echo " invisible opacity-0 scale-75"; } ?>">
                 <h1 class="text-center mb-14 text-gray-700 font-extrabold text-4xl form-title">Login to Your Account</h1>
-                <?php if (isset($_SESSION['errors'])): ?>
+                <?php if (isset($_SESSION['errors']) && $page == 'login'): ?>
                     <div class="px-5 py-4 rounded border border-red-500 bg-red-100 mb-7 -mt-5 text-center">
-                        <h3 class="text-lg font-semibold mb-3">Errors!</h3>
                         <ul>
                             <?php
                                 foreach($_SESSION["errors"] as $error) {
@@ -63,6 +69,7 @@
                         </ul>
                     </div>
                 <?php endif; ?>
+                <input type="hidden" name="CSRF_token" value="<?php echo $_SESSION["CSRF_token"]; ?>">
                 <div class="mb-7">
                     <label for="email" class="mb-2 block sr-only">Email</label>
                     <input type="text" name="email" placeholder="Email" id="email" class="outline-none border border-orange-300 px-4 py-2 w-full rounded-lg bg-orange-500 bg-opacity-10 placeholder:text-gray-500">
@@ -76,8 +83,21 @@
 
             <!-- Register Form -->
 
-            <form action="/Controllers/Validation/register.php" method="POST" class="py-7 px-9 max-w-xl w-full rounded-xl register-form opacity-0 transition-all duration-300 delay-100 scale-75 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 invisible">
+            <form action="/Controllers/Validation/register.php" method="POST" class="py-7 px-9 max-w-xl w-full rounded-xl register-form transition-all duration-300 delay-100 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 <?php if($page != 'register') { echo " invisible opacity-0 scale-75"; } ?>">
                 <h1 class="text-center mb-14 text-gray-700 font-extrabold text-4xl form-title">Create a new Account</h1>
+                <?php if (isset($_SESSION['errors']) && $page == 'register'): ?>
+                    <div class="px-5 py-4 rounded border border-red-500 bg-red-100 mb-7 -mt-5 text-center">
+                        <ul>
+                            <?php
+                                foreach($_SESSION["errors"] as $error) {
+                                    echo "<li>$error</li>";
+                                }
+                                session_destroy();
+                            ?>
+                        </ul>
+                    </div>
+                <?php endif; ?>
+                <input type="text" name="CSRF_token" value="<?php echo $_SESSION["CSRF_token"]; ?>">
                 <div class="flex gap-4 mb-7">
                     <div class="w-full">
                         <label for="first-name" class="mb-2 block sr-only">First Name</label>
@@ -100,18 +120,18 @@
                     <label for="confirm-password" class="mb-2 block sr-only">Confirm Password</label>
                     <input type="password" name="confirm-password" placeholder="Confirm Password" id="confirm-password" class="outline-none border border-orange-300 px-4 py-2 w-full rounded-lg bg-orange-500 bg-opacity-10 placeholder:text-gray-500">
                 </div>
-                <button type="submit" class="w-44 h-12 block mx-auto rounded-full font-semibold text-white bg-orange-500 hover:bg-orange-600 transition-colors">Log In</button>
+                <button type="submit" class="w-44 h-12 block mx-auto rounded-full font-semibold text-white bg-orange-500 hover:bg-orange-600 transition-colors">Register</button>
             </form>
         </div>
 
 
-        <div class="w-[30%] bg-gradient-to-tr to-orange-400 from-orange-700 h-screen register-bar flex flex-col justify-center items-center text-white px-7 text-center transition duration-300 absolute top-0 left-[70%]">
+        <div class="w-[30%] bg-gradient-to-tr to-orange-400 from-orange-700 h-screen register-bar flex flex-col justify-center items-center text-white px-7 text-center transition duration-300 absolute top-0 left-[70%] <?php if($page == 'register') { echo " translate-y-full"; } ?>">
             <h2 class="mb-10 text-3xl font-bold">New Here?</h2>
             <p class="text-md">Register and discover plenty of blogs that would interest you.</p>
             <button type="button" class="bg-white w-44 h-12 rounded-full mt-7 text-orange-500 font-semibold register-btn">Register</button>
         </div>
 
-        <div class="w-[30%] bg-gradient-to-tr to-orange-400 from-orange-700 h-screen login-bar flex flex-col justify-center items-center text-white px-7 text-center transition duration-300 delay-300 absolute top-0 left-0 translate-y-full">
+        <div class="w-[30%] bg-gradient-to-tr to-orange-400 from-orange-700 h-screen login-bar flex flex-col justify-center items-center text-white px-7 text-center transition duration-300 delay-300 absolute top-0 left-0  <?php if($page == 'login') { echo " translate-y-full"; } ?>">
             <h2 class="mb-10 text-3xl font-bold">Already a member?</h2>
             <p class="text-md">Log into your account and continue the journey. Don't miss it</p>
             <button type="button" class="bg-white w-44 h-12 rounded-full mt-7 text-orange-500 font-semibold login-btn">Login</button>

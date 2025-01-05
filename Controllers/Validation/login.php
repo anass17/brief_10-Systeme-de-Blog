@@ -7,6 +7,7 @@
     require '../Classes/Auth.php';
 
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
+        $CSRF_token = isset($_POST['CSRF_token']) ? $_POST['CSRF_token'] : '';
         $email = isset($_POST['email']) ? $_POST['email'] : '';
         $password = isset($_POST['password']) ? $_POST['password'] : '';
 
@@ -16,6 +17,14 @@
 
         if ($auth -> isAccessTokenExists()) {
             header('Location: /index.php');
+            exit;
+        }
+
+        // If CSRF Token is Invalid
+
+        if (!$auth -> isCSRFTokenValid($CSRF_token)) {
+            $_SESSION['errors'] = ['Invalid CSRF Token'];
+            header('Location: /pages/auth.php');
             exit;
         }
 
