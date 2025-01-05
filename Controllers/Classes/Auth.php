@@ -13,7 +13,7 @@
         // Getter
 
         public function getErrors() {
-            return $this -> errors;
+            return array_merge($this -> errors, $this -> user -> getErrors());
         }
 
         // Method to log the user into his account
@@ -158,7 +158,7 @@
 
             date_default_timezone_set('Etc/GMT-1');         // Set timezone to UTC + 1
             $token = bin2hex(random_bytes(32));
-            $token_expiration = time() + 15 * 60;
+            $token_expiration = time() + 20 * 60;
             $token_expiration_formated = date('Y-m-d H:i:s', $token_expiration);
 
             // Store token in the database
