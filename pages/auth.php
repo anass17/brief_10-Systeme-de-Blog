@@ -1,3 +1,20 @@
+<?php
+    session_start();
+
+    require '../Controllers/Classes/Database.php';
+    require '../Controllers/Classes/User.php';
+    require '../Controllers/Classes/Auth.php';
+
+    $auth = new Auth();
+
+    // Check if access token does not exist
+
+    if ($auth -> isAccessTokenExists()) {
+        header('Location: /index.php');
+        exit;
+    }
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -33,6 +50,19 @@
 
             <form action="/Controllers/Validation/login.php" method="POST" class="py-7 px-9 max-w-xl w-full rounded-xl login-form transition-all delay-100 duration-200 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                 <h1 class="text-center mb-14 text-gray-700 font-extrabold text-4xl form-title">Login to Your Account</h1>
+                <?php if (isset($_SESSION['errors'])): ?>
+                    <div class="px-5 py-4 rounded border border-red-500 bg-red-100 mb-7 -mt-5 text-center">
+                        <h3 class="text-lg font-semibold mb-3">Errors!</h3>
+                        <ul>
+                            <?php
+                                foreach($_SESSION["errors"] as $error) {
+                                    echo "<li>$error</li>";
+                                }
+                                session_destroy();
+                            ?>
+                        </ul>
+                    </div>
+                <?php endif; ?>
                 <div class="mb-7">
                     <label for="email" class="mb-2 block sr-only">Email</label>
                     <input type="text" name="email" placeholder="Email" id="email" class="outline-none border border-orange-300 px-4 py-2 w-full rounded-lg bg-orange-500 bg-opacity-10 placeholder:text-gray-500">
@@ -46,7 +76,7 @@
 
             <!-- Register Form -->
 
-            <form action="/Controllers/Validation/register.php" method="POST" class="py-7 px-9 max-w-xl w-full rounded-xl register-form opacity-0 transition duration-300 delay-100 scale-75 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            <form action="/Controllers/Validation/register.php" method="POST" class="py-7 px-9 max-w-xl w-full rounded-xl register-form opacity-0 transition-all duration-300 delay-100 scale-75 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 invisible">
                 <h1 class="text-center mb-14 text-gray-700 font-extrabold text-4xl form-title">Create a new Account</h1>
                 <div class="flex gap-4 mb-7">
                     <div class="w-full">
@@ -111,12 +141,14 @@
             // Login Form
 
             loginForm.style.opacity = '0';
+            loginForm.style.visibility = 'hidden';
             loginForm.classList.add('delay-100', 'scale-75');
             loginForm.classList.remove('delay-300');
 
             // Register Form
 
             registerForm.style.opacity = '1';
+            registerForm.style.visibility = 'visible';
             registerForm.classList.remove('scale-75');
             registerForm.classList.add('delay-300');
 
@@ -138,12 +170,14 @@
             // Login Form
 
             loginForm.style.opacity = '1';
+            loginForm.style.visibility = 'visible';
             loginForm.classList.remove('delay-100', 'scale-75');
             loginForm.classList.add('delay-300');
 
             // Register Form
 
             registerForm.style.opacity = '0';
+            registerForm.style.visibility = 'hidden';
             registerForm.classList.add('scale-75', 'delay-100');
             registerForm.classList.remove('delay-300');
 
