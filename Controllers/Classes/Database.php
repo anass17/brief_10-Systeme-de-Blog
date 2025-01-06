@@ -8,7 +8,7 @@
         private string $charset = 'utf8mb4';
         private $conn;
 
-        public function __construct(string $host = 'localhost', string $dbname = 'bibliotheque', string $username = 'root', string $password = 'root123') {
+        public function __construct(string $host = 'localhost', string $dbname = 'blogs_db', string $username = 'root', string $password = 'root123') {
             $this -> host = $host;
             $this -> dbname = $dbname;
             $this -> username = $username;

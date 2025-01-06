@@ -6,11 +6,13 @@
         private string $last_name = '';
         private string $email = '';
         private string $password = '';
+        private string $register_date = '';
         private string $role = '';
         private array $errors = [];
+        private Database|null $db;
 
-        public function __construct() {
-            
+        public function __construct(Database|null $db = null) {
+            $this -> db = $db;
         }
 
         // Getters
@@ -29,6 +31,9 @@
         }
         public function getRole() {
             return htmlspecialchars($this -> role);
+        }
+        public function getRegisterDate() {
+            return htmlspecialchars($this -> register_date);
         }
         public function getPassword() {
             return $this -> password;
@@ -85,6 +90,24 @@
                 return false;
             }
             $this -> role = $role;
+        }
+
+        public function setRegisterDate(string $date) {
+            $this -> register_date = $date;
+        }
+
+        // Methods
+
+        public function getUserData() {
+            $result = $this -> db -> selectOne('SELECT * FROM users WHERE user_id = ?', [$this -> getId()]);
+
+            if ($result) {
+                $this -> setFirstName($result["first_name"]);
+                $this -> setLastName($result["last_name"]);
+                $this -> setEmail($result["email"]);
+                $this -> setRegisterDate($result["register_date"]);
+            }
+
         }
 
 

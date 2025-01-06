@@ -1,12 +1,12 @@
 <?php
 
     class Auth {
-        private Database $db;
+        public Database $db;
         public User $user;
         private array $errors = [];
 
-        public function __construct() {
-            $this -> db = new Database();
+        public function __construct(Database $db) {
+            $this -> db = $db;
             $this -> user = new User();
         }
 
