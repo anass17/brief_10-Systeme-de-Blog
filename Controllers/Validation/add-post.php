@@ -8,7 +8,9 @@
         require '../Classes/Auth.php';
         require '../Classes/Post.php';
 
-        $auth = new Auth();
+        $db = new Database();
+
+        $auth = new Auth($db);
 
         // Check if access token does not exist
 
@@ -17,7 +19,7 @@
             exit;
         }
 
-        $post = new Post();
+        $post = new Post($db);
 
         $CSRF_token = isset($_POST['CSRF_token']) ? $_POST['CSRF_token'] : '';
         $author_id = isset($_POST['author_id']) ? $_POST['author_id'] : '';

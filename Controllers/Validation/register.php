@@ -14,7 +14,8 @@
         $password = isset($_POST['password']) ? $_POST['password'] : '';
         $confirm_password = isset($_POST['confirm-password']) ? $_POST['confirm-password'] : '';
 
-        $auth = new Auth();
+        $db = new Database();
+        $auth = new Auth($db);
 
         // Check if access token already exist
 
