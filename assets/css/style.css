@@ -1,3 +1,10 @@
 * {
     font-family: "Roboto", serif;
 }
+
+.no-scrolling::-webkit-scrollbar {width: 0}
+
+.tag-btn.selected {
+    background-color: rgb(249, 115, 22);
+    color: #FFF;
+}
