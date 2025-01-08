@@ -11,6 +11,7 @@
         private string $image_url;
         private Database $db;
         private array $errors = [];
+        public array $comments = [];
 
 
         public function __construct(Database $db) {
@@ -186,7 +187,7 @@
         }
 
         public function getAllPosts() {
-            return $this -> db -> select("SELECT * from posts join users on users.user_id = posts.post_author join categories on categories.cat_id = posts.post_cat");
+            return $this -> db -> select("SELECT * from posts join users on users.user_id = posts.post_author");
         }
 
         public function getPostData(string $id) {
@@ -200,9 +201,64 @@
             $this -> setContent($result['content']);
             $this -> setImageUrl($result['post_image_url']);
             $this -> setAuthorId($result['post_author']);
-            $this -> setCategoryId($result['post_cat']);
+            // $this -> setCategoryId($result['post_cat']);
             $this -> setPublishDate($result['publish_date']);
 
             return true;
+        }
+
+        // Method to create a comment
+
+        public function createComment($content, $author_id) {
+
+            $new_comment = new Comment($this -> db);
+
+            $new_comment -> setContent($content);
+            $new_comment -> setAuthorId($author_id);
+
+            if (!empty($new_comment -> getErrors())) {
+                array_push($this -> errors, "Please fill in the form");
+                return false;
+            }
+
+            if (
+                empty($this -> id)
+            ) {
+                array_push($this -> errors, "Could not process your request");
+                return false;
+            }
+
+            $columns = [
+                'content',
+                'comment_author',
+                'comment_post'
+            ];
+
+            $data = [
+                $content,
+                $new_comment -> getAuthorID(),
+                $this -> getId()
+            ];
+
+            if (!$this -> db -> insert('comments', $columns, $data)) {
+                array_push($this -> errors, "Could not save your changes");
+                return false;
+            }
+
+            array_push($this -> comments, $new_comment);
+
+            return true;
+        }
+
+        // Method to get all comments
+
+        public function getAllComments() {
+            return $this -> db -> select("SELECT * from comments join users on users.user_id = comments.comment_author WHERE comment_post = ? ORDER BY comment_id", [$this -> getId()]);
+        }
+
+        // Method to get all comments
+
+        public function getAllTags() {
+            return $this -> db -> select("SELECT * from post_tags join tags on tags.tag_id = post_tags.tag_id WHERE post_id = ?", [$this -> getId()]);
         }
     }
