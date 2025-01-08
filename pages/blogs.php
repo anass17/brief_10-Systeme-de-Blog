@@ -81,7 +81,7 @@
                         <div class="px-5 py-4">
                             <span class="text-gray-400 font-medium"><?php echo "{$row['cat_name']}"; ?></span>
                             <h2 class="text-blue-500 font-semibold text-lg mt-4 mb-1"><?php echo $row['title']; ?></h2>
-                            <h3 class="text-sm text-gray-500"><?php echo "{$row['first_name']} {$row['last_name']}"; ?> <?php if ($row["post_author"] == $auth -> user -> getId()) {echo "<span class='px-3 py-0.5 text-center ml-3 rounded bg-gray-600 text-white inline-block'>You</span>";} ?></h3>
+                            <h3 class="text-sm text-gray-500"><?php echo "{$row['first_name']} {$row['last_name']}"; ?> <?php if ($row["post_author"] == $auth -> user -> getId()) {echo "<span class='mx-2 inline-block'>•</span><span class='font-semibold'>You</span>";} ?></h3>
                         </div>
                     </a>
 

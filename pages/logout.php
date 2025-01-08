@@ -5,7 +5,8 @@
     require '../Controllers/Classes/User.php';
     require '../Controllers/Classes/Auth.php';
 
-    $auth = new Auth();
+    $db = new Database();
+    $auth = new Auth($db);
 
     $auth -> logout();
 
