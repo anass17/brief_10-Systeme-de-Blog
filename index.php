@@ -3,13 +3,13 @@
     session_start();
 
     require './Controllers/Classes/Database.php';
-    require './Controllers/Classes/User.php';
     require './Controllers/Classes/Auth.php';
+    require './Controllers/Classes/User.php';
 
     $db = new Database();
-    $auth = new Auth($db);
+    $user = new User($db);
 
-    if ($auth -> isAccessTokenExists()) {
+    if ($user -> isAccessTokenExists()) {
         $is_registred = true;
         header('Location: /pages/blogs.php');
         exit;
