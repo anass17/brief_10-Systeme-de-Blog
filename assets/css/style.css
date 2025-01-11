@@ -8,3 +8,8 @@
     background-color: rgb(249, 115, 22);
     color: #FFF;
 }
+
+.filter-selected {
+    background-color: #FFF !important;
+    color: orangered !important;
+}
