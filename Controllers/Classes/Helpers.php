@@ -40,7 +40,6 @@
     
         }
 
-
         public function format_text($text) {
             $formated_text = preg_replace('/\*\*(.+)?\*\*/', '<b>\1</b>', $text);
             $formated_text = preg_replace('/# (.+)?\n/', '<h2 class="text-lg block font-semibold">\1</h2>', $formated_text);

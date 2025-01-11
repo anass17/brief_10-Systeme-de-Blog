@@ -5,13 +5,14 @@
         private string $title;
         private string $content;
         private int $author_id;
-        private int $category_id;
         private string $publish_date;
         private array $image;
         private string $image_url;
         private Database $db;
         private array $errors = [];
         public array $comments = [];
+        public array $reactions = [];
+        public array $tags = [];
 
 
         public function __construct(Database $db) {
@@ -31,9 +32,6 @@
         }
         public function getAuthorID() {
             return htmlspecialchars($this -> author_id);
-        }
-        public function getCategoryID() {
-            return htmlspecialchars($this -> category_id);
         }
         public function getPublishDate() {
             return htmlspecialchars($this -> publish_date);
@@ -57,22 +55,12 @@
             return true;
         }
 
-        public function setAuthorId(string|int $id) : bool {
+        public function setAuthorId(string $id) : bool {
             if (preg_match('/^[1-9][0-9]*$/', $id) == 0) {
                 array_push($this -> errors, "Invalid Author ID");
                 return false;
             }
             $this -> author_id = (int) $id;
-
-            return true;
-        }
-
-        public function setCategoryId(string|int $id) : bool {
-            if (preg_match('/^[1-9][0-9]*$/', $id) == 0) {
-                array_push($this -> errors, "Invalid Category ID");
-                return false;
-            }
-            $this -> category_id = (int) $id;
 
             return true;
         }
@@ -141,8 +129,7 @@
             if (
                 empty($this -> title) ||
                 empty($this -> content) ||
-                empty($this -> author_id) ||
-                empty($this -> category_id)
+                empty($this -> author_id)
             ) {
                 array_push($this -> errors, "Could not process your request");
                 return false;
@@ -166,8 +153,7 @@
                 'title',
                 'content',
                 'post_image_url',
-                'post_author',
-                'post_cat'
+                'post_author'
             ];
 
             $data = [
@@ -175,10 +161,75 @@
                 $this -> content,
                 $image_path,
                 $this -> author_id,
-                $this -> category_id
             ];
 
-            if (!$this -> db -> insert('posts', $columns, $data)) {
+            $inserted_id = $this -> db -> insert('posts', $columns, $data);
+
+            if (!$inserted_id) {
+                array_push($this -> errors, "Could not save your changes");
+                return false;
+            }
+
+            $this -> id = $inserted_id;
+
+            return true;
+        }
+
+        // Method to update post
+
+        public function updatePost() {
+            if (!empty($this -> errors)) {
+                return false;
+            }
+
+            if (
+                empty($this -> id) ||
+                empty($this -> title) ||
+                empty($this -> content)
+            ) {
+                array_push($this -> errors, "Could not process your request");
+                return false;
+            }
+
+            $columns = [
+                'title',
+                'content'
+            ];
+
+            $data = [
+                $this -> title,
+                $this -> content
+            ];
+
+            if (!$this -> db -> update('posts', $columns, $data, 'post_id = ?', [$this -> id])) {
+                array_push($this -> errors, "Could not save your changes");
+                return false;
+            }
+
+            $this -> db -> delete('post_tags', 'post_id = ?', [$this -> id]);
+
+            return true;
+        }
+
+        // Method to delete a post
+
+        public function deletePost() {
+            if (!empty($this -> errors)) {
+                return false;
+            }
+
+            if (
+                empty($this -> id)
+            ) {
+                array_push($this -> errors, "Could not process your request");
+                return false;
+            }
+
+            $data = [
+                $this -> id,
+            ];
+
+            if (!$this -> db -> delete('posts', 'post_id = ?', $data)) {
                 array_push($this -> errors, "Could not save your changes");
                 return false;
             }
@@ -187,7 +238,19 @@
         }
 
         public function getAllPosts() {
-            return $this -> db -> select("SELECT * from posts join users on users.user_id = posts.post_author");
+            $posts = $this -> db -> select("SELECT * from posts join users on users.user_id = posts.post_author ORDER BY post_id DESC");
+            
+            // Get tags of each post
+
+            $tags_groups = [];
+
+            foreach($posts as $post) {
+                $tags = $this -> db -> select("SELECT * FROM post_tags join tags on tags.tag_id = post_tags.tag_id WHERE post_id = ?", [$post['post_id']]);
+            
+                array_push($tags_groups, $tags);
+            }
+
+            return [$posts, $tags_groups];
         }
 
         public function getPostData(string $id) {
@@ -261,4 +324,89 @@
         public function getAllTags() {
             return $this -> db -> select("SELECT * from post_tags join tags on tags.tag_id = post_tags.tag_id WHERE post_id = ?", [$this -> getId()]);
         }
+
+        // Method to add a new reaction
+
+        public function addReaction(string $type, $user_id) : bool {
+            $reaction = new reaction($this -> db);
+
+            $reaction -> setType($type);
+            $reaction -> setUserId($user_id);
+
+            if (!empty($reaction -> getErrors())) {
+                array_push($this -> errors, "Could not add the reaction");
+                return false;
+            }
+
+            if (
+                empty($this -> id) ||
+                empty($reaction -> getType()) ||
+                empty($reaction -> getUserId())
+            ) {
+                array_push($this -> errors, "Could not process your request");
+                return false;
+            }
+
+            $columns = [
+                'user_id',
+                'post_id',
+                'type'
+            ];
+
+            $data = [
+                $reaction -> getUserId(),
+                $this -> id,
+                $reaction -> getType()
+            ];
+
+            if ($this -> db -> insert('reactions', $columns, $data) === false) {
+                array_push($this -> errors, "Could not save your changes");
+                return false;
+            }
+
+            array_push($this -> reactions, $reaction);
+
+            return true;
+        }
+
+        public function getAllReactions(string $type = '') {
+
+            $query = "";
+
+            if ($type == "Like") {
+                $query = "and type = 'Like'";
+            } else if ($type == "Dislike") {
+                $query = "and type = 'Dislike'";
+            }
+
+            return $this -> db -> select("SELECT * from reactions join users on users.user_id = reactions.user_id WHERE post_id = ? $query", [$this -> getId()]);
+        }
+
+        public function addTag(Tag $tag) {
+
+            if (empty($tag -> getId())) {
+                return false;
+            }
+
+            if (!$this -> db -> insert('post_tags', ['post_id', 'tag_id'], [$this -> getId(), $tag -> getId()])) {
+                return false;
+            }
+
+            array_push($this -> tags, $tag);
+        }
+
+        public function filterPost(string $search, array $tags) {
+
+            if (count($tags) > 0) {
+    
+                $placeholders = implode('|', $tags);
+    
+                return $this -> db -> select("SELECT p.post_id, title, first_name, last_name, post_image_url as image, GROUP_CONCAT(t.tag_name ORDER BY t.tag_id) AS tags FROM posts p JOIN users u ON u.user_id = p.post_author JOIN post_tags pt ON p.post_id = pt.post_id JOIN tags t ON pt.tag_id = t.tag_id WHERE p.title LIKE CONCAT('%', ?, '%') OR first_name LIKE CONCAT('%', ?, '%') group by p.post_id having GROUP_CONCAT(t.tag_id) REGEXP '({$placeholders})(,|$)'", [$search, $search]);
+            
+            }
+
+            return $this -> db -> select("SELECT p.post_id, title, first_name, last_name, post_image_url as image, GROUP_CONCAT(t.tag_name ORDER BY t.tag_id) AS tags FROM posts p JOIN users u ON u.user_id = p.post_author JOIN post_tags pt ON p.post_id = pt.post_id JOIN tags t ON pt.tag_id = t.tag_id WHERE p.title LIKE CONCAT('%', ?, '%') OR first_name LIKE CONCAT('%', ?, '%') GROUP BY p.post_id", [$search, $search]);
+
+        }
     }
+

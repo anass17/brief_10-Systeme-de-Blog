@@ -6,6 +6,7 @@
         private string $username;
         private string $password;
         private string $charset = 'utf8mb4';
+        private string $error = '';
         private $conn;
 
         public function __construct(string $host = 'localhost', string $dbname = 'blogs_db', string $username = 'root', string $password = 'root123') {
@@ -65,6 +66,7 @@
             // Only Select statements are allowed
 
             if (preg_match('/^SELECT/i', $sql) == 0) {
+                $this -> error = "The sql used in select() method was not SELECT";
                 return false;
             }
 
@@ -75,7 +77,8 @@
                 $stmt -> execute($data);
 
                 return $stmt -> fetchAll();
-            } catch (PDOException) {
+            } catch (PDOException $e) {
+                $this -> error = "Error in the SQL -> " . $e;
                 return [];
             }
         }
@@ -85,6 +88,7 @@
         public function insert(string $table, array $columns, array $data) {
 
             if (count($columns) == 0 || count($columns) != count($data)) {
+                $this -> error = "The number of columns does not match the number of data";
                 return false;
             }
 
@@ -112,7 +116,8 @@
                     return $this -> conn -> lastInsertId();
                 }
                 return false;
-            } catch (Exception) {
+            } catch (Exception $e) {
+                $this -> error = "This error happend: {$e -> getMessage()}";
                 return false;
             }
         }
@@ -175,5 +180,11 @@
             } catch (PDOException) {
                 return false;
             }
+        }
+
+        // Method to get error
+
+        public function getError() {
+            return $this -> error;
         }
     }
