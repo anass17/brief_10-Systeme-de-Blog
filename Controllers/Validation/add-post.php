@@ -4,17 +4,18 @@
 
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
         require '../Classes/Database.php';
-        require '../Classes/User.php';
         require '../Classes/Auth.php';
+        require '../Classes/User.php';
         require '../Classes/Post.php';
+        require '../Classes/Tag.php';
 
         $db = new Database();
 
-        $auth = new Auth($db);
+        $user = new User($db);
 
         // Check if access token does not exist
 
-        if (!$auth -> isAccessTokenExists()) {
+        if (!$user -> isAccessTokenExists()) {
             header('Location: /pages/auth.php');
             exit;
         }
@@ -25,29 +26,46 @@
         $author_id = isset($_POST['author_id']) ? $_POST['author_id'] : '';
         $post_title = isset($_POST['post-title']) ? $_POST['post-title'] : '';
         $post_content = isset($_POST['post-content']) ? $_POST['post-content'] : '';
-        $post_category = isset($_POST['post-category']) ? $_POST['post-category'] : '';
+        $post_tags = isset($_POST['post-tags']) ? $_POST['post-tags'] : '';
         $post_background = isset($_POST['post-background']) ? $_POST['post-background'] : '';
 
         // If CSRF Token is Invalid
 
-        if (!$auth -> isCSRFTokenValid($CSRF_token)) {
+        if (!$user -> isCSRFTokenValid($CSRF_token)) {
             $_SESSION['errors'] = ['Invalid CSRF Token'];
             header('Location: /pages/blogs.php');
             exit;
         }
 
+        $user -> deleteCSRFToken();
+
+        // Split tags
+
+        $tags_list = explode(',', rtrim($post_tags, ','));
+
         $post -> setTitle($post_title);
         $post -> setContent($post_content);
         $post -> setAuthorId($author_id);
-        $post -> setCategoryId($post_category);
         $post -> setImage($_FILES['post-background']);
 
+        // If post wasn't created, exit
+    
         if (!$post -> createPost()) {
             $_SESSION['errors'] = $post -> getErrors();
             header('Location: /pages/blogs.php');
             exit;
         }
+
+        // Insert tags
+
+        foreach($tags_list as $tag_item) {
+            $tag = new Tag($db, $tag_item);
+            $post -> addTag($tag);
+        }
+
+        header('Location: /pages/post.php?id=' . $post -> getId());
+        exit;
     }
-        
+    
     header('Location: /pages/blogs.php');
     
