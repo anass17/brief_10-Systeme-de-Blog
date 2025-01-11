@@ -5,7 +5,7 @@ let commentPostIdInput = commentForm.querySelector('[name="post-id"]');
 let commentPostContentInput = commentForm.querySelector('[name="post-content"]');
 let deleteCommentBtns = document.querySelectorAll('.delete-comment-btn');
 let editCommentBtns = document.querySelectorAll('.edit-comment-btn');
-
+let postMenuBtn = document.querySelector('.post-menu-btn');
 
 commentSubmitBtn.addEventListener('click', function (e) {
     e.preventDefault();
@@ -136,5 +136,200 @@ editCommentBtns.forEach((btn) => {
 document.querySelectorAll('.comment-menu-btns').forEach((btn) => {
     btn.addEventListener('click', function () {
         this.nextElementSibling.classList.toggle('hidden');
+    });
+});
+
+document.querySelectorAll('.react-btn').forEach((btn, index, elements) => {
+    btn.addEventListener('click', function () {
+    
+        let method = "POST";
+        let reactionElement = [];
+
+        if (this.classList.contains('reacted')) {
+            method = "DELETE";
+        } else {
+            reactionElement = [...elements].filter(item => item.classList.contains('reacted'));
+
+            if (reactionElement.length > 0) {
+                method = "PUT";
+            }
+        }
+
+        fetch('/api/ReactionApi.php', {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                postId: commentPostIdInput.value,
+                type: this.dataset.type
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            
+            console.log(data);
+
+            let color = "dodgerblue";
+            if (this.dataset.type == "Dislike") {
+                color = "red";
+            }
+
+            if (data.result === true) {
+                if (data.status == "Added" || data.status == "Updated") {
+                    this.firstElementChild.style.fill = color;
+                    this.nextElementSibling.textContent = +this.nextElementSibling.textContent + 1;
+                    this.classList.add('reacted');
+                } else if (data.status == "Deleted") {
+                    this.firstElementChild.style.fill = "";
+                    this.nextElementSibling.textContent = +this.nextElementSibling.textContent - 1;
+                    this.classList.remove('reacted');
+                } 
+                
+                if (data.status == "Updated") {
+                    if (reactionElement.length > 0) {
+                        reactionElement[0].firstElementChild.style.fill = "";
+                        reactionElement[0].nextElementSibling.textContent = +reactionElement[0].nextElementSibling.textContent - 1;
+                        reactionElement[0].classList.remove('reacted');
+                    }
+                }
+            }
+        });
+    });
+})
+
+//-----------------------------------
+// Post Menu
+//-----------------------------------
+
+postMenuBtn.addEventListener('click', function () {
+    this.nextElementSibling.classList.toggle('hidden');
+});
+
+//-----------------------------------
+// Delete Post
+//-----------------------------------
+
+document.querySelector('.delete-post').addEventListener('click', function () {
+    postMenuBtn.nextElementSibling.classList.add('hidden');
+    postDeleteConfimation.classList.remove('hidden');
+    postDeleteConfimation.classList.add('flex');
+});
+
+let postDeleteConfimation = document.querySelector('.post-delete-confirmation');
+
+postDeleteConfimation.querySelector('.close-btn').addEventListener('click', function () {
+    postDeleteConfimation.classList.add('hidden');
+    postDeleteConfimation.classList.remove('flex');
+});
+
+//-----------------------------------
+// Edit Post
+//-----------------------------------
+
+let postTitle = document.querySelector('.post-title');
+let postContent = document.querySelector('.post-content');
+let postTags = document.querySelector('.post-tags');
+let editBlock = document.querySelector('.edit-block');
+let tagsBtns = document.querySelector('.tags-btns');
+
+let originalContent;
+
+document.querySelector('.edit-post').addEventListener('click', function () {
+    postMenuBtn.nextElementSibling.classList.add('hidden');
+
+    postTitle.lastElementChild.setAttribute('contenteditable', 'true');
+    postTitle.classList.add('bg-gray-200');
+    postTitle.firstElementChild.classList.remove('hidden');
+
+    postContent.lastElementChild.setAttribute('contenteditable', 'true');
+    postContent.classList.add('bg-gray-200');
+    postContent.firstElementChild.classList.remove('hidden');
+
+    postTags.classList.add('hidden');
+    editBlock.classList.remove('hidden');
+
+});
+
+document.querySelectorAll('.tag-btn').forEach((btn) => {
+    btn.addEventListener('click', function () {
+        if (this.classList.contains('selected')) {
+            this.classList.remove('selected', 'border-orange-500');
+            // postTags.value = postTags.value.replace(this.dataset.tag + ',', '');
+        } else {
+            this.classList.add('selected', 'border-orange-500');
+            // postTags.value += this.dataset.tag + ',';
+        }
+    });
+});
+
+document.querySelector('.cancel-edit-post').addEventListener('click', function () {
+    postTitle.lastElementChild.removeAttribute('contenteditable');
+    postTitle.classList.remove('bg-gray-200');
+    postTitle.firstElementChild.classList.add('hidden');
+
+    postContent.lastElementChild.removeAttribute('contenteditable');
+    postContent.classList.remove('bg-gray-200');
+    postContent.firstElementChild.classList.add('hidden');
+
+    postTags.classList.remove('hidden');
+    editBlock.classList.add('hidden');
+});
+
+document.querySelector('.save-edit-post').addEventListener('click', function () {
+
+    let tagsString = "";
+    tagsBtns.querySelectorAll('button.selected').forEach(item => {
+        tagsString += item.dataset.id + ',';
+    });
+
+    fetch('/api/PostApi.php', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            postId: +location.search.replace('?id=', ''),
+            postTitle: postTitle.textContent.trim(),
+            postContent: postContent.textContent.trim(),
+            tags: tagsString
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        
+        console.log(data);
+        if (data.result === true) {
+            
+            postTitle.lastElementChild.removeAttribute('contenteditable');
+            postTitle.classList.remove('bg-gray-200');
+            postTitle.firstElementChild.classList.add('hidden');
+
+            postContent.lastElementChild.removeAttribute('contenteditable');
+            postContent.classList.remove('bg-gray-200');
+            postContent.firstElementChild.classList.add('hidden');
+
+            postTags.classList.remove('hidden');
+            editBlock.classList.add('hidden');
+
+            postTags.innerHTML = "";
+            
+            let tags = JSON.parse(data.tags);
+
+            tags.forEach(tag => {
+                let element = document.createElement('a');
+
+                element.href = "#";
+                element.className = "text-blue-500 font-semibold mr-5";
+
+                element.innerHTML = `# ${tag[0]}`;
+
+                postTags.append(element);
+
+            });
+
+        } else {
+            createAlert('Error!', data.error);
+        }
     });
 });

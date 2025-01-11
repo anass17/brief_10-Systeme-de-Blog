@@ -1,5 +1,11 @@
 let writeBlogBtn = document.querySelector('.write-blog-btn');
 
+let tagsString = "";
+
+tagsList.forEach(tag => {
+    tagsString += `<button type="button" data-tag="${tag["tag_id"]}" class="bg-gray-100 tag-btn">${tag["tag_name"]}</button>`;
+})
+
 writeBlogBtn.addEventListener('click', function () {
     let modal = document.createElement('div');
 
@@ -25,7 +31,7 @@ writeBlogBtn.addEventListener('click', function () {
 
                 <div class="mb-4">
                     <label for="form-post-content" class="block mb-2">Content</label>
-                    <textarea type="text" placeholder="Post Body" id="form-post-content" name="post-content" class="w-full px-4 py-2 rounded border outline-none h-36 resize-y border-orange-200 bg-gray-100 placeholder:text-gray-500"></textarea>
+                    <textarea type="text" placeholder="Post Body [# Headline] [**Bold Text**]" id="form-post-content" name="post-content" class="w-full px-4 py-2 rounded border outline-none h-36 resize-y border-orange-200 bg-gray-100 placeholder:text-gray-500"></textarea>
                     <small class="text-red-400 font-semibold"></small>
                 </div>
 
@@ -36,17 +42,12 @@ writeBlogBtn.addEventListener('click', function () {
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 320 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M310.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L242.7 256 73.4 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"/></svg>
                         </button>
                     </div>
-                    <div class="overflow-hidden tags-container transition-all" style="height: 0px;">
-                        <div class="*:text-sm grid grid-cols-3 gap-3 *:rounded *:border *:shadow *:py-1.5 pb-4">
-                            <button type="button" class="bg-gray-100 tag-btn">HTML</button>
-                            <button type="button" class="bg-gray-100 tag-btn">CSS</button>
-                            <button type="button" class="bg-gray-100 tag-btn">JS</button>
-                            <button type="button" class="bg-gray-100 tag-btn">Web Development</button>
-                            <button type="button" class="bg-gray-100 tag-btn">Front-end</button>
-                            <button type="button" class="bg-gray-100 tag-btn">Full-Stack</button>
+                    <div class="">
+                        <div class="*:text-sm grid grid-cols-3 gap-3 *:rounded *:border *:shadow *:py-1.5 overflow-auto no-scrolling tags-container transition-all" style="height: 0px;">
+                            ${tagsString}
                         </div>
                     </div>
-                    <input type="text" id="form-post-tags" name="post-tags" class="w-full px-3 py-2 rounded border outline-none border-orange-200 bg-gray-100 placeholder:text-gray-500">
+                    <input type="hidden" id="form-post-tags" name="post-tags" class="w-full px-3 py-2 rounded border outline-none border-orange-200 bg-gray-100 placeholder:text-gray-500">
                     <small class="text-red-400 font-semibold"></small>
                 </div>
                 
@@ -127,13 +128,117 @@ writeBlogBtn.addEventListener('click', function () {
             if (this.classList.contains('selected')) {
                 this.classList.remove('selected');
                 tagsCount.textContent = tagsCount.textContent - 1;
-                postTags.value = postTags.value.replace(this.textContent + ',', '');
+                postTags.value = postTags.value.replace(this.dataset.tag + ',', '');
             } else {
                 this.classList.add('selected');
                 tagsCount.textContent = +tagsCount.textContent + 1;
-                postTags.value += this.textContent + ',';
+                postTags.value += this.dataset.tag + ',';
             }
         });
     });
 
+});
+
+//-----------------------------
+// Filter
+//-----------------------------
+
+let filterTagButton = document.querySelectorAll('.filter-tag-btn');
+let blogsContainer = document.querySelector('.blogs-container');
+
+filterTagButton.forEach(item => {
+    item.addEventListener('click', function () {
+        if (this.classList.contains('filter-selected')) {
+            this.classList.remove('filter-selected');
+        } else {
+            this.classList.add('filter-selected');
+        }
+
+        searchFilterRequest();
+        
+    });
+});
+
+function displayBlog(details) {
+    let element = document.createElement('a');
+
+    element.className = "shadow-md rounded overflow-hidden block post-item";
+    element.href = "/pages/post.php?id=" + details["post_id"];
+
+    let tagsList = details.tags.split(',');
+
+    let tagsString = "";
+
+    for(let i = 0; i < tagsList.length && i < 3; i++) {
+        tagsString += `<span class='mr-4'>#${tagsList[i]}</span>`;
+    }
+
+    if (tagsList.length > 3) {
+        tagsString += "<span class='text-gray-800'>+ " + (tagsList.length - 3) + "</span>";
+    }
+
+    let image = "/assets/imgs/blogs/placeholder.jpg";
+
+    if (details.image != "") {
+        image = details.image;
+    }
+
+
+    element.innerHTML = 
+        `<div class="h-44 bg-gray-200 bg-cover bg-center" style="background-image: url('${image}')">
+
+        </div>
+        <div class="px-5 py-4">
+            <span class="text-gray-400 font-medium">
+                ${tagsString}
+            </span>
+            <h2 class="text-blue-500 font-semibold text-lg mt-4 mb-1">${details["title"]}</h2>
+            <h3 class="text-sm text-gray-500">${details.first_name} ${details.last_name}</h3>
+        </div>`;
+
+        blogsContainer.append(element);
+}
+
+let searchInput = document.querySelector('.search-input');
+
+searchInput.addEventListener('keyup', function () {
+    searchFilterRequest();
+});
+
+function searchFilterRequest() {
+
+    let endpoint = `/api/PostApi.php?search=${searchInput.value}&tags=${([...filterTagButton].reduce((str, item) => item.classList.contains('filter-selected') ? str += item.dataset.id + ',' : str += '', ''))}`;
+
+    fetch(endpoint, {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+
+        blogsContainer.innerHTML = "";
+
+        if (data.response.length > 0) {
+            data.response.forEach(item => {
+                displayBlog(item);
+            });
+        } else {
+            let para = document.createElement('p');
+
+            para.className = "text-center col-span-3 text-gray-600";
+
+            para.textContent = "Could not find any posts for the selected filters";
+
+            blogsContainer.append(para);
+        }
+    });
+}
+
+document.querySelector('.search-tags').addEventListener('keyup', function () {
+    filterTagButton.forEach(btn => {
+        if (btn.textContent.toLowerCase().search(this.value.toLowerCase()) >= 0) {
+            btn.classList.remove('hidden');
+        } else {
+            btn.classList.add('hidden');
+        }
+    });
 });

@@ -51,3 +51,13 @@ function decodeText(text) {
 
     return decodedComment;
 }
+
+// -------------------------------
+
+let userMenu = document.querySelector('.user-menu');
+
+if (userMenu) {
+    userMenu.addEventListener('click', function () {
+        userMenu.nextElementSibling.classList.toggle('hidden');
+    });
+}
