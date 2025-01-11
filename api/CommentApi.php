@@ -3,27 +3,23 @@
     session_start();
 
     require '../Controllers/Classes/Database.php';
-    require '../Controllers/Classes/User.php';
     require '../Controllers/Classes/Auth.php';
+    require '../Controllers/Classes/User.php';
     require '../Controllers/Classes/Post.php';
     require '../Controllers/Classes/Comment.php';
     require '../Controllers/Classes/Helpers.php';
 
     header('Content-Type: application/json');
 
-    if (isset($_SERVER["QUERY_STRING"])) {
-
-    }
-
     $db = new Database();
-    $auth = new Auth($db);
+    $user = new User($db);
     $helpers = new Helpers();
     $post = new Post($db);
     $comment = new Comment($db);
 
     // Check if access token does not exist
 
-    if (!$auth -> isAccessTokenExists()) {
+    if (!$user -> isAccessTokenExists()) {
         echo json_encode([
             'result' => false,
             'error' => 'You are not authorized to perform this action'
@@ -45,7 +41,7 @@
 
             $post -> setId($post_id);
 
-            if (!$post -> createComment($post_content, $auth -> user -> getId())) {
+            if (!$post -> createComment($post_content, $user -> getId())) {
                 echo json_encode([
                     'result' => false,
                     'error' => 'Could not process your request'
@@ -55,8 +51,8 @@
                     'result' => true,
                     'error' => '',
                     'details' => [
-                        'firstName' => $auth -> user -> getFirstName(),
-                        'lastName' => $auth -> user -> getLastName(),
+                        'firstName' => $user -> getFirstName(),
+                        'lastName' => $user -> getLastName(),
                         'content' => $helpers -> format_text($post_content)
                     ]
                 ]);
