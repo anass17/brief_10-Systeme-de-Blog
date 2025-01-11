@@ -2,20 +2,20 @@
     session_start();
 
     require '../Controllers/Classes/Database.php';
-    require '../Controllers/Classes/User.php';
     require '../Controllers/Classes/Auth.php';
+    require '../Controllers/Classes/User.php';
 
     $db = new Database();
-    $auth = new Auth($db);
+    $user = new User($db);
 
     // Check if access token does not exist
 
-    if ($auth -> isAccessTokenExists()) {
+    if ($user -> isAccessTokenExists()) {
         header('Location: /index.php');
         exit;
     }
 
-    $auth -> createCSRFToken();
+    $user -> createCSRFToken();
 
     $page = 'login';
     if (isset($_GET['to']) && $_GET['to'] == 'register') {
@@ -98,7 +98,7 @@
                         </ul>
                     </div>
                 <?php endif; ?>
-                <input type="text" name="CSRF_token" value="<?php echo $_SESSION["CSRF_token"]; ?>">
+                <input type="hidden" name="CSRF_token" value="<?php echo $_SESSION["CSRF_token"]; ?>">
                 <div class="flex gap-4 mb-7">
                     <div class="w-full">
                         <label for="first-name" class="mb-2 block sr-only">First Name</label>

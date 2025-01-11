@@ -2,13 +2,13 @@
     session_start();
 
     require '../Controllers/Classes/Database.php';
-    require '../Controllers/Classes/User.php';
     require '../Controllers/Classes/Auth.php';
+    require '../Controllers/Classes/User.php';
 
     $db = new Database();
-    $auth = new Auth($db);
+    $user = new User($db);
 
-    $auth -> logout();
+    $user -> logout();
 
     header('Location: /pages/auth.php');
 ?>
