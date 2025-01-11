@@ -3,8 +3,8 @@
     session_start();
 
     require '../Classes/Database.php';
-    require '../Classes/User.php';
     require '../Classes/Auth.php';
+    require '../Classes/User.php';
 
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $CSRF_token = isset($_POST['CSRF_token']) ? $_POST['CSRF_token'] : '';
@@ -15,32 +15,32 @@
         $confirm_password = isset($_POST['confirm-password']) ? $_POST['confirm-password'] : '';
 
         $db = new Database();
-        $auth = new Auth($db);
+        $user = new User($db);
 
         // Check if access token already exist
 
-        if ($auth -> isAccessTokenExists()) {
+        if ($user -> isAccessTokenExists()) {
             header('Location: /index.php');
             exit;
         }
 
         // If CSRF Token is Invalid
 
-        if (!$auth -> isCSRFTokenValid($CSRF_token)) {
+        if (!$user -> isCSRFTokenValid($CSRF_token)) {
             $_SESSION['errors'] = ['Invalid CSRF Token'];
             header('Location: /pages/auth.php?to=register');
             exit;
         }
 
-        $auth -> user -> setFirstName($first_name);
-        $auth -> user -> setLastName($last_name);
-        $auth -> user -> setEmail($email);
-        $auth -> user -> setPassword($password);
+        $user -> setFirstName($first_name);
+        $user -> setLastName($last_name);
+        $user -> setEmail($email);
+        $user -> setPassword($password);
 
         // If the two passwords don't match
 
         if ($password != $confirm_password) {
-            $errors_list = $auth -> getErrors();
+            $errors_list = $user -> getErrors();
             array_push($errors_list, "The two passwords are different");
             $_SESSION['errors'] = $errors_list;
             header('Location: /pages/auth.php?to=register');
@@ -49,13 +49,13 @@
 
         // Try to register
 
-        if (!$auth -> register()) {
-            $_SESSION['errors'] = $auth -> getErrors();
+        if (!$user -> register()) {
+            $_SESSION['errors'] = $user -> getErrors();
             header('Location: /pages/auth.php?to=register');
             exit;
         }
 
-        header('Location: /pages/profile.php');
+        header('Location: /pages/blogs.php');
         
     } else {
         header('Location: /pages/auth.php?to=register');

@@ -3,8 +3,8 @@
     session_start();
 
     require '../Classes/Database.php';
-    require '../Classes/User.php';
     require '../Classes/Auth.php';
+    require '../Classes/User.php';
 
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $CSRF_token = isset($_POST['CSRF_token']) ? $_POST['CSRF_token'] : '';
@@ -12,28 +12,28 @@
         $password = isset($_POST['password']) ? $_POST['password'] : '';
 
         $db = new Database();
-        $auth = new Auth($db);
+        $user = new User($db);
 
         // Check if access token already exist
 
-        if ($auth -> isAccessTokenExists()) {
+        if ($user -> isAccessTokenExists()) {
             header('Location: /index.php');
             exit;
         }
 
         // If CSRF Token is Invalid
 
-        if (!$auth -> isCSRFTokenValid($CSRF_token)) {
+        if (!$user -> isCSRFTokenValid($CSRF_token)) {
             $_SESSION['errors'] = ['Invalid CSRF Token'];
             header('Location: /pages/auth.php');
             exit;
         }
 
-        $auth -> user -> setEmail($email);
-        $auth -> user -> setPassword($password);
+        $user -> setEmail($email);
+        $user -> setPassword($password);
 
-        if (!$auth -> login()) {
-            $_SESSION['errors'] = $auth -> getErrors();
+        if (!$user -> login()) {
+            $_SESSION['errors'] = $user -> getErrors();
             header('Location: /pages/auth.php');
             exit;
         }
